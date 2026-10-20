@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الإدارة - مدرسة رجب محمد محمود</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #cbd5e1; --danger: #dc2626; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; min-height: 100vh; }
+        .login-container, .admin-panel { max-width: 650px; margin: auto; background: var(--card); padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; }
+        .admin-panel { display: none; }
+        h2 { color: var(--primary); margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; }
+        input[type="text"], input[type="password"], textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; }
+        textarea { resize: vertical; height: 80px; }
+        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; width: 100%; font-weight: bold; }
+        button:hover { opacity: 0.9; }
+        .section-box { border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 20px; background: #fff; }
+        .section-box h3 { font-size: 1.1rem; color: var(--primary); margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        
+        .list-item { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin-bottom: 10px; background: var(--bg); }
+        .btn-delete { background: var(--danger); width: auto; padding: 6px 12px; font-size: 0.85rem; }
+        .time-badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 5px; font-size: 0.8rem; font-weight: bold; margin-top: 5px; }
+
+        footer { text-align: center; padding: 15px; font-size: 0.75rem; color: #64748b; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container" id="login-box">
+        <h2>تسجيل دخول الإدارة</h2>
+        <div class="form-group">
+            <label>كلمة المرور السرية:</label>
+            <input type="password" id="admin-pass" placeholder="أدخل كلمة المرور ">
+        </div>
+        <button onclick="loginAdmin()">دخول للوحة التحكم</button>
+    </div>
+
+    <div class="admin-panel" id="admin-panel">
+        <h2>لوحة تحكم إدارة المدرسة</h2>
+
+        <!-- Post Creator (Images Only) -->
+        <div class="section-box">
+            <h3><i class="fa-solid fa-pen-to-square"></i> نشر منشور جديد (نص وصورة)</h3>
+            <div class="form-group">
+                <label>نص المنشور:</label>
+                <textarea id="post-text" placeholder="اكتب نص الخبر أو التنبيه هنا..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>اختر صورة من الجهاز (اختياري):</label>
+                <input type="file" id="post-image-file" accept="image/*">
+            </div>
+            <button onclick="createPost()">نشر المنشور فوراً</button>
+        </div>
+
+        <!-- Question Creator (Supports Question Image) -->
+        <div class="section-box">
+            <h3><i class="fa-solid fa-circle-question"></i> إنشاء سؤال جديد للطلاب</h3>
+            <div class="form-group">
+                <label>نوع السؤال:</label>
+                <select id="q-type" onchange="toggleOptionsBox()">
+                    <option value="mcq">اختياري (من متعدد)</option>
+                    <option value="essay">مقالي (إجابة كتابية)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>نص السؤال:</label>
+                <textarea id="q-text" placeholder="اكتب السؤال هنا..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>إرفاق صورة مع السؤال (اختياري):</label>
+                <input type="file" id="q-image-file" accept="image/*">
+            </div>
+            <div class="form-group" id="mcq-options-box">
+                <label>خيارات الإجابة (مفصولة بـ فاصلة , ):</label>
+                <input type="text" id="q-options" placeholder="مثال: القاهرة, الجيزة, سوهاج, الإسكندرية">
+            </div>
+            <button style="background:#10b981;" onclick="createQuestion()">نشر السؤال للطلاب</button>
+            
+            <h4 style="margin-top:15px; font-size:0.95rem;">الأسئلة المنشورة حالياً:</h4>
+            <div id="questions-delete-list" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- Student Answers Submissions -->
+        <div class="section-box">
+            <h3><i class="fa-solid fa-clock-history"></i> إجابات الطلاب مرتبة بالأسرع</h3>
+            <div id="answers-list"></div>
+        </div>
+
+        <!-- Manage & Delete Posts -->
+        <div class="section-box">
+            <h3><i class="fa-solid fa-trash-can"></i> إدارة وحذف المنشورات الحالية</h3>
+            <div id="posts-delete-list"></div>
+        </div>
+
+        <!-- Schedule Management -->
+        <div class="section-box">
+            <h3><i class="fa-solid fa-calendar-days"></i> إدارة جداول الفصول المحددة</h3>
+            <div class="form-group">
+                <label>اختر الصف الدراسي:</label>
+                <select id="target-grade" onchange="updateAdminClassOptions()">
+                    <option value="1">الصف الأول الثانوي</option>
+                    <option value="2">الصف الثاني الثانوي</option>
+                    <option value="3">الصف الثالث الثانوي</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>اختر الفصل المحدد:</label>
+                <select id="target-class" onchange="fetchClassData()"></select>
+            </div>
+            <div class="form-group">
+                <label>جدول الحصص (نص):</label>
+                <textarea id="schedule-input"></textarea>
+                <label style="margin-top:5px;">صورة جدول الحصص للفصل:</label>
+                <input type="file" id="schedule-img-file" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>جدول الامتحانات (نص):</label>
+                <textarea id="exam-input"></textarea>
+                <label style="margin-top:5px;">صورة جدول الامتحانات للفصل:</label>
+                <input type="file" id="exam-img-file" accept="image/*">
+            </div>
+            <button onclick="saveSchedule()">حفظ وتحديث جدول هذا الفصل</button>
+        </div>
+
+        <!-- Top Students Management -->
+        <div class="section-box">
+            <h3><i class="fa-solid fa-award"></i> إدارة لوحة الشرف (الطلاب المتفوقون)</h3>
+            <div class="form-group">
+                <input type="text" id="st-name" placeholder="اسم الطالب المتفوق">
+            </div>
+            <div class="form-group">
+                <input type="text" id="st-class" placeholder="فصل الطالب (مثال: 1/1)">
+            </div>
+            <div class="form-group">
+                <input type="file" id="st-img-file" accept="image/*">
+            </div>
+            <button style="background:#f59e0b;" onclick="addTopStudent()">إضافة الطالب للمتفوقين</button>
+            <div id="top-students-delete-list" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- Urgent Alert Panel -->
+        <div class="section-box">
+            <h3><i class="fa-solid fa-bullhorn"></i> إرسال تنبيه عاجل</h3>
+            <div class="form-group">
+                <input type="text" id="alert-text" placeholder="نص التنبيه العاجل...">
+            </div>
+            <button style="background:#dc2626;" onclick="sendAlert(true)">إرسال التنبيه الآن</button>
+            <button style="background:#64748b; margin-top: 8px;" onclick="sendAlert(false)">إيقاف التنبيه</button>
+        </div>
+    </div>
+
+    <footer>
+        إنشاء / حسام مصطفي عبدالرحمن عبدالله
+    </footer>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, getDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1ER7DAKSD6sYanGQHcFgUeyg5pxBNLKc",
+            authDomain: "school-772e3.firebaseapp.com",
+            projectId: "school-772e3",
+            storageBucket: "school-772e3.firebasestorage.app",
+            messagingSenderId: "205626167545",
+            appId: "1:205626167545:web:ae14d4c4aa00878d5c5228"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentScheduleImg = "";
+        let currentExamImg = "";
+
+        window.loginAdmin = function() {
+            const pass = document.getElementById('admin-pass').value;
+            if(pass === "admin718293") {
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                updateAdminClassOptions();
+                listenToPostsForDelete();
+                listenToTopStudents();
+                listenToQuestions();
+                listenToAnswers();
+            } else { alert("كلمة المرور غير صحيحة!"); }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Post Creator (Images Only)
+        window.createPost = async function() {
+            const text = document.getElementById('post-text').value;
+            const fileInput = document.getElementById('post-image-file');
+            
+            if(!text && fileInput.files.length === 0) { alert("اكتب نص المنشور أو اختر صورة!"); return; }
+
+            let imageData = "";
+            if(fileInput.files.length > 0) {
+                imageData = await fileToBase64(fileInput.files[0]);
+            }
+
+            try {
+                await addDoc(collection(db, "posts"), {
+                    text: text,
+                    image: imageData,
+                    timestamp: serverTimestamp()
+                });
+                alert("تم نشر المنشور بنجاح!");
+                document.getElementById('post-text').value = "";
+                document.getElementById('post-image-file').value = "";
+            } catch(e) { alert("خطأ: " + e.message); }
+        }
+
+        window.toggleOptionsBox = function() {
+            const type = document.getElementById('q-type').value;
+            document.getElementById('mcq-options-box').style.display = type === 'mcq' ? 'block' : 'none';
+        }
+
+        // Create Question with Optional Image
+        window.createQuestion = async function() {
+            const type = document.getElementById('q-type').value;
+            const text = document.getElementById('q-text').value;
+            const rawOpts = document.getElementById('q-options').value;
+            const imgFile = document.getElementById('q-image-file').files[0];
+
+            if(!text) { alert("يرجى كتابة نص السؤال!"); return; }
+
+            let optionsArr = [];
+            if(type === 'mcq') {
+                if(!rawOpts) { alert("يرجى كتابة الخيارات مفصولة بـ فاصلة!"); return; }
+                optionsArr = rawOpts.split(',').map(o => o.trim());
+            }
+
+            let imgUrl = imgFile ? await fileToBase64(imgFile) : "";
+
+            try {
+                await addDoc(collection(db, "questions"), {
+                    type: type,
+                    question: text,
+                    image: imgUrl,
+                    options: optionsArr,
+                    timestamp: serverTimestamp()
+                });
+                alert("تم نشر السؤال بنجاح!");
+                document.getElementById('q-text').value = "";
+                document.getElementById('q-options').value = "";
+                document.getElementById('q-image-file').value = "";
+            } catch(e) { alert("خطأ: " + e.message); }
+        }
+
+        function listenToQuestions() {
+            onSnapshot(collection(db, "questions"), (snapshot) => {
+                const list = document.getElementById('questions-delete-list');
+                list.innerHTML = "";
+                snapshot.forEach((docSnap) => {
+                    const qData = docSnap.data();
+                    const item = document.createElement('div');
+                    item.className = 'list-item';
+                    item.innerHTML = `<div><strong>${qData.question}</strong> (${qData.type === 'mcq' ? 'اختياري' : 'مقالي'})</div><button class="btn-delete" onclick="deleteQuestion('${docSnap.id}')">حذف السؤال</button>`;
+                    list.appendChild(item);
+                });
+            });
+        }
+
+        window.deleteQuestion = async function(id) {
+            if(confirm("مسح هذا السؤال؟")) await deleteDoc(doc(db, "questions", id));
+        }
+
+        function listenToAnswers() {
+            const q = query(collection(db, "student_answers"), orderBy("timestamp", "asc"));
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('answers-list');
+                list.innerHTML = "";
+                if(snapshot.empty) {
+                    list.innerHTML = `<p style="text-align:center; color:#64748b;">لا توجد إجابات مُرسلة بعد.</p>`;
+                    return;
+                }
+                
+                let rank = 1;
+                snapshot.forEach((docSnap) => {
+                    const ans = docSnap.data();
+                    let timeFormatted = "جاري الحساب...";
+                    if (ans.timestamp) {
+                        const dateObj = ans.timestamp.toDate();
+                        timeFormatted = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + " | " + dateObj.toLocaleDateString('ar-EG');
+                    }
+
+                    const item = document.createElement('div');
+                    item.className = 'list-item';
+                    item.innerHTML = `
+                        <div>
+                            <span style="background:var(--primary); color:white; padding:2px 7px; border-radius:50%; font-size:0.8rem; margin-left:5px;">#${rank}</span>
+                            <strong>الطالب:</strong> ${ans.studentName} | <strong>الفصل:</strong> ${ans.studentClass}<br>
+                            <strong>الإجابة:</strong> <span style="color:#2563eb;">${ans.answer}</span><br>
+                            <span class="time-badge"><i class="fa-regular fa-clock"></i> وقت الإرسال: ${timeFormatted}</span>
+                        </div>
+                        <button class="btn-delete" onclick="deleteAnswer('${docSnap.id}')">مسح</button>
+                    `;
+                    list.appendChild(item);
+                    rank++;
+                });
+            });
+        }
+
+        window.deleteAnswer = async function(id) {
+            if(confirm("مسح الإجابة من السجل؟")) await deleteDoc(doc(db, "student_answers", id));
+        }
+
+        window.updateAdminClassOptions = function() {
+            const grade = document.getElementById('target-grade').value;
+            const classSelect = document.getElementById('target-class');
+            classSelect.innerHTML = "";
+            for(let i = 1; i <= 9; i++) {
+                const opt = document.createElement('option');
+                opt.value = `${i}/${grade}`;
+                opt.innerText = `فصل ${i}/${grade}`;
+                classSelect.appendChild(opt);
+            }
+            fetchClassData();
+        }
+
+        window.addTopStudent = async function() {
+            const name = document.getElementById('st-name').value;
+            const cls = document.getElementById('st-class').value;
+            const imgFile = document.getElementById('st-img-file').files[0];
+            if(!name || !cls) return;
+            let imgUrl = imgFile ? await fileToBase64(imgFile) : "";
+            await addDoc(collection(db, "top_students"), { name: name, class: cls, image: imgUrl });
+            alert("تمت الإضافة!");
+            document.getElementById('st-name').value = "";
+            document.getElementById('st-class').value = "";
+        }
+
+        function listenToTopStudents() {
+            onSnapshot(collection(db, "top_students"), (snapshot) => {
+                const list = document.getElementById('top-students-delete-list');
+                list.innerHTML = "";
+                snapshot.forEach((docSnap) => {
+                    const st = docSnap.data();
+                    const item = document.createElement('div');
+                    item.className = 'list-item';
+                    item.innerHTML = `<div><strong>${st.name}</strong> - فصل ${st.class}</div><button class="btn-delete" onclick="deleteTopStudent('${docSnap.id}')">حذف</button>`;
+                    list.appendChild(item);
+                });
+            });
+        }
+
+        window.deleteTopStudent = async function(id) {
+            if(confirm("حذف الطالب؟")) await deleteDoc(doc(db, "top_students", id));
+        }
+
+        window.fetchClassData = async function() {
+            const cls = document.getElementById('target-class').value;
+            if(!cls) return;
+            const docId = `class_${cls.replace('/', '_')}`;
+            const docSnap = await getDoc(doc(db, "schedules", docId));
+            if(docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('schedule-input').value = data.schedule || "";
+                document.getElementById('exam-input').value = data.exams || "";
+            } else {
+                document.getElementById('schedule-input').value = "";
+                document.getElementById('exam-input').value = "";
+            }
+        }
+
+        window.saveSchedule = async function() {
+            const cls = document.getElementById('target-class').value;
+            const schedule = document.getElementById('schedule-input').value;
+            const exams = document.getElementById('exam-input').value;
+            const schFile = document.getElementById('schedule-img-file').files[0];
+            const exFile = document.getElementById('exam-img-file').files[0];
+            let scheduleImg = currentScheduleImg;
+            let examImg = currentExamImg;
+
+            if(schFile) scheduleImg = await fileToBase64(schFile);
+            if(exFile) examImg = await fileToBase64(exFile);
+
+            const docId = `class_${cls.replace('/', '_')}`;
+            await setDoc(doc(db, "schedules", docId), { schedule: schedule, exams: exams, scheduleImg: scheduleImg, examImg: examImg });
+            alert(`تم الحفظ لفصل ${cls}!`);
+        }
+
+        function listenToPostsForDelete() {
+            const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const deleteList = document.getElementById('posts-delete-list');
+                deleteList.innerHTML = "";
+                snapshot.forEach((docSnap) => {
+                    const post = docSnap.data();
+                    const item = document.createElement('div');
+                    item.className = 'list-item';
+                    item.innerHTML = `<div>${post.text ? post.text.substring(0, 40) + '...' : 'صورة'}</div><button class="btn-delete" onclick="deletePost('${docSnap.id}')">حذف</button>`;
+                    deleteList.appendChild(item);
+                });
+            });
+        }
+
+        window.deletePost = async function(id) {
+            if(confirm("حذف المنشور؟")) await deleteDoc(doc(db, "posts", id));
+        }
+
+        window.sendAlert = async function(isActive) {
+            const text = document.getElementById('alert-text').value;
+            await setDoc(doc(db, "alerts", "current"), { active: isActive, message: text || "" });
+            alert(isActive ? "تم إرسال التنبيه!" : "تم إيقاف التنبيه.");
+        }
+    </script>
+</body>
+</html>
